@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Engineering Assistant | Optimize & Explain Prompts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #050a14;
+            --bg-secondary: #0f1929;
+            --bg-tertiary: #1a2437;
+            --bg-card: #111c2e;
+            --border-color: #2d3a52;
+            --text-primary: #e0e6ed;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-hover: #60a5fa;
+            --accent-light: #1e3a8a;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #fbbf24;
+            --gradient-primary: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --gradient-secondary: linear-gradient(135deg, #10b981, #06b6d4);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 40px rgba(59, 130, 246, 0.2);
+            --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.5);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.15), transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15), transparent 50%),
+                        radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.1), transparent 50%);
+            z-index: -1;
+            animation: breath 20s ease-in-out infinite;
+        }
+
+        @keyframes breath {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            margin-bottom: 48px;
+            padding: 40px 0;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(to bottom, var(--bg-card), transparent);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        h1 .logo {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        h1 .logo::after {
+            content: 'PE';
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            font-weight: 300;
+            max-width: 600px;
+            line-height: 1.7;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .controls:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 240px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        select, textarea {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            padding: 14px 18px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 50px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            background: var(--bg-tertiary);
+        }
+
+        textarea {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.7;
+            min-height: 180px;
+            resize: vertical;
+            padding: 16px 18px;
+            transition: all 0.3s;
+        }
+
+        textarea:focus {
+            transform: translateY(-2px);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-3px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            letter-spacing: 0.2px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-icon {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s;
+        }
+
+        .btn:hover .btn-icon {
+            transform: translateY(-2px) scale(1.1);
+        }
+
+        .compare-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1024px) {
+            .compare-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent-light);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(to right, var(--bg-tertiary), var(--bg-card));
+            position: relative;
+        }
+
+        .panel-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .panel:hover .panel-header::before {
+            opacity: 1;
+        }
+
+        .panel-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent);
+            font-weight: 600;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            transition: all 0.3s;
+        }
+
+        .panel:hover .badge {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 28px;
+            overflow-y: auto;
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        .panel-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-secondary);
+            opacity: 0.3;
+        }
+
+        .panel-content pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-primary);
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .panel:hover .panel-content pre {
+            background: var(--bg-tertiary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .explanation-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-top: 32px;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .explanation-panel:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .explanation-content {
+            padding: 32px;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            background: linear-gradient(to bottom, var(--bg-card), var(--bg-secondary));
+        }
+
+        .explanation-content strong {
+            color: var(--text-primary);
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite, breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            box-shadow: var(--shadow-xl);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            letter-spacing: 0.3px;
+            font-weight: 500;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+            background: linear-gradient(90deg, var(--bg-secondary), rgba(16, 185, 129, 0.05));
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+            background: linear-gradient(90deg, var(--bg-secondary), rgba(239, 68, 68, 0.05));
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--accent);
+            background: linear-gradient(90deg, var(--bg-secondary), rgba(59, 130, 246, 0.05));
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 200px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 60px 40px;
+            transition: all 0.3s;
+        }
+
+        .empty-state:hover {
+            color: var(--accent);
+            transform: translateY(-5px);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+            transition: all 0.3s;
+            stroke: currentColor;
+        }
+
+        .empty-state:hover svg {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .tech-description {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            min-height: 20px;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--accent);
+            transition: all 0.3s;
+        }
+
+        .tech-description:hover {
+            background: var(--bg-secondary);
+            transform: translateX(5px);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            animation: fadeIn 0.6s ease-out;
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        }
+
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            animation: floatParticle 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes floatParticle {
+            from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            to { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle" style="left: 10%; width: 4px; height: 4px; background: var(--accent);"></div>
+    <div class="particle" style="left: 30%; width: 3px; height: 3px; background: var(--success); animation-delay: -5s;"></div>
+    <div class="particle" style="left: 50%; width: 5px; height: 5px; background: var(--warning); animation-delay: -10s;"></div>
+    <div class="particle" style="left: 70%; width: 4px; height: 4px; background: var(--accent); animation-delay: -15s;"></div>
+    <div class="particle" style="left: 90%; width: 3px; height: 3px; background: var(--success); animation-delay: -20s;"></div>
+
+    <div class="container">
+        <header>
+            <h1>Prompt Engineering Assistant</h1>
+            <p class="subtitle">Transform your prompts with advanced techniques powered by NVIDIA Nemotron 3 Ultra, featuring Chain-of-Thought, Few-Shot, and ReAct methodologies for optimal AI interaction.</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group" style="flex: 2; min-width: 300px;">
+                <label for="technique">Prompt Technique</label>
+                <select id="technique">
+                    <option value="chain_of_thought">Chain of Thought</option>
+                    <option value="few_shot">Few-Shot</option>
+                    <option value="zero_shot">Zero-Shot</option>
+                    <option value="role_prompting">Role Prompting</option>
+                    <option value="react">ReAct (Reasoning + Acting)</option>
+                </select>
+                <div class="tech-description" id="tech-description"></div>
+            </div>
+            <div class="control-group" style="flex: 1; min-width: 180px;">
+                <button class="btn btn-primary" id="optimize-btn">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    Optimize Prompt
+                </button>
+            </div>
+        </div>
+
+        <div class="control-group" style="margin-bottom: 32px;">
+            <label for="prompt-input">Your Prompt</label>
+            <textarea 
+                id="prompt-input" 
+                placeholder="Enter your prompt here...&#10;&#10;Example: Design a responsive web application that handles user authentication, data visualization, and real-time updates using modern web technologies. Include best practices for security, performance, and accessibility."
+            ></textarea>
+        </div>
+
+        <div class="compare-container" id="compare-container" style="display: none;">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        Original Prompt
+                        <span class="badge" id="original-badge">INPUT</span>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <pre id="original-prompt"><div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        <p>Enter a prompt and click Optimize</p>
+                    </div></pre>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        Optimized Prompt
+                        <span class="badge" id="technique-badge">OPT</span>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <pre id="optimized-prompt"><div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        <p>Optimized prompt will appear here</p>
+                    </div></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-row" id="action-row" style="display: none;">
+            <button class="btn btn-secondary" id="explain-btn">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                Explain Improvements
+            </button>
+            <button class="btn btn-secondary" id="copy-original-btn">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy Original
+            </button>
+            <button class="btn btn-secondary" id="copy-optimized-btn">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy Optimized
+            </button>
+        </div>
+
+        <div class="explanation-panel" id="explanation-panel" style="display: none;">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                    Why This Works Better
+                </div>
+            </div>
+            <div class="explanation-content" id="explanation-content">
+                <p>The explanation will appear here after you click "Explain Improvements". This will show you the specific enhancements made to your prompt and why they're effective.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const techniqueDescriptions = {
+            chain_of_thought: "Forces step-by-step reasoning. Best for math, logic, coding, and complex problem solving.",
+            few_shot: "Provides examples to guide output format. Best for structured outputs, classification, style matching.",
+            zero_shot: "Clear standalone instruction, no examples needed. Best for simple tasks, creative writing, general Q&A.",
+            role_prompting: "Assigns expert persona for domain-specific quality. Best for code review, professional writing, analysis.",
+            react: "Alternates reasoning and actions. Best for multi-step tasks, tool use, research, agent workflows."
+        };
+
+        const techniqueLabels = {
+            chain_of_thought: "CoT",
+            few_shot: "FEW",
+            zero_shot: "ZERO",
+            role_prompting: "ROLE",
+            react: "ReAct"
+        };
+
+        let currentOptimized = '';
+        let currentTechnique = '';
+
+        const techniqueSelect = document.getElementById('technique');
+        const promptInput = document.getElementById('prompt-input');
+        const optimizeBtn = document.getElementById('optimize-btn');
+        const explainBtn = document.getElementById('explain-btn');
+        const copyOriginalBtn = document.getElementById('copy-original-btn');
+        const copyOptimizedBtn = document.getElementById('copy-optimized-btn');
+        const compareContainer = document.getElementById('compare-container');
+        const actionRow = document.getElementById('action-row');
+        const explanationPanel = document.getElementById('explanation-panel');
+        const originalPromptEl = document.getElementById('original-prompt');
+        const optimizedPromptEl = document.getElementById('optimized-prompt');
+        const techniqueBadge = document.getElementById('technique-badge');
+        const explanationContent = document.getElementById('explanation-content');
+        const techDescription = document.getElementById('tech-description');
+        const toast = document.getElementById('toast');
+
+        techniqueSelect.addEventListener('change', () => {
+            techDescription.textContent = techniqueDescriptions[techniqueSelect.value] || '';
+        });
+        techDescription.textContent = techniqueDescriptions[techniqueSelect.value];
+
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        async function copyToClipboard(text, label) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(`${label} copied to clipboard`, 'success');
+            } catch {
+                showToast(`Failed to copy ${label}`, 'error');
+            }
+        }
+
+        function setLoading(button, loading) {
+            if (loading) {
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner"></span> Working...';
+            } else {
+                button.disabled = false;
+                button.innerHTML = button.dataset.originalHtml;
+            }
+        }
+
+        [optimizeBtn, explainBtn, copyOriginalBtn, copyOptimizedBtn].forEach(btn => {
+            btn.dataset.originalHtml = btn.innerHTML;
+        });
+
+        optimizeBtn.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
+            const technique = techniqueSelect.value;
+
+            if (!prompt) {
+                showToast('Please enter a prompt first', 'error');
+                return;
+            }
+
+            setLoading(optimizeBtn, true);
+            explainBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, technique })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Optimization failed');
+
+                currentOptimized = data.optimized;
+                currentTechnique = data.technique;
+
+                originalPromptEl.textContent = data.original;
+                optimizedPromptEl.textContent = data.optimized;
+                techniqueBadge.textContent = techniqueLabels[technique] || 'OPT';
+
+                compareContainer.style.display = 'grid';
+                actionRow.style.display = 'flex';
+                explanationPanel.style.display = 'none';
+                explanationContent.innerHTML = '';
+
+                showToast('Prompt optimized successfully', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                setLoading(optimizeBtn, false);
+                explainBtn.disabled = false;
+            }
+        });
+
+        explainBtn.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
+            
+            if (!prompt || !currentOptimized) {
+                showToast('No optimized prompt to explain', 'error');
+                return;
+            }
+
+            setLoading(explainBtn, true);
+
+            try {
+                const response = await fetch('/api/explain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        original: prompt,
+                        optimized: currentOptimized,
+                        technique: currentTechnique
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Explanation failed');
+
+                explanationContent.innerHTML = data.explanation
+                    .split('\n')
+                    .map(line => {
+                        if (line.startsWith('##')) {
+                            return `<h3 style="color: var(--accent); margin: 20px 0 10px; font-size: 1.1em;">${line.replace(/^## /, '')}</h3>`;
+                        } else if (line.startsWith('###')) {
+                            return `<h4 style="color: var(--text-primary); margin: 16px 0 8px; font-size: 1em;">${line.replace(/^### /, '')}</h4>`;
+                        } else if (line.startsWith('- ')) {
+                            return `<li style="margin: 6px 0 6px 24px; color: var(--text-secondary); position: relative;">${line.substring(2)}</li>`;
+                        } else if (line.trim()) {
+                            return `<p style="margin: 12px 0; color: var(--text-secondary); line-height: 1.7;">${line}</p>`;
+                        } else {
+                            return '<br>';
+                        }
+                    })
+                    .join('');
+
+                explanationPanel.style.display = 'block';
+                explanationPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                showToast('Explanation generated', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                setLoading(explainBtn, false);
+            }
+        });
+
+        copyOriginalBtn.addEventListener('click', () => {
+            copyToClipboard(promptInput.value.trim(), 'Original prompt');
+        });
+
+        copyOptimizedBtn.addEventListener('click', () => {
+            copyToClipboard(currentOptimized, 'Optimized prompt');
+        });
+
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                optimizeBtn.click();
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                promptInput.focus();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
